@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
 const authRoutes = require('./routes/auth');
 const freshdeskRoutes = require('./routes/freshdesk');
 const hubspotRoutes = require('./routes/hubspot');
@@ -16,10 +15,10 @@ app.use(cors({
   credentials: true,
 }));
 
-// Raw body for webhook signature verification (before json parser)
-app.use('/api/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/webhook', express.raw({ type: '*/*' }));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -31,7 +30,6 @@ app.use('/api/webhook', webhookRoutes);
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
 // MongoDB connection
-console.log(process.env.MONGODB_URI)
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/spritle-portal')
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err));
