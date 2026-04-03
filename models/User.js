@@ -27,19 +27,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  // HubSpot OAuth tokens
-  hubspotAccessToken: {
-    type: String,
-    default: null,
-  },
-  hubspotRefreshToken: {
-    type: String,
-    default: null,
-  },
-  hubspotTokenExpiry: {
-    type: Date,
-    default: null,
-  },
 }, { timestamps: true });
 
 // Hash password before save
@@ -58,7 +45,6 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 userSchema.virtual('integrations').get(function () {
   return {
     freshdesk: !!(this.freshdeskApiKey && this.freshdeskDomain),
-    hubspot: !!(this.hubspotAccessToken),
   };
 });
 

@@ -54,6 +54,9 @@ router.delete('/disconnect', protect, async (req, res) => {
 });
 
 // GET /api/freshdesk/tickets
+// Supports two modes:
+//   ?all=true        → fetches every ticket across all pages (for count/dashboard)
+//   ?page=N&per_page=30 → standard paginated fetch (for ticket list UI)
 router.get('/tickets', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -61,7 +64,32 @@ router.get('/tickets', protect, async (req, res) => {
       return res.status(400).json({ message: 'Freshdesk not connected' });
     }
 
-    const { page = 1, per_page = 30 } = req.query;
+    const { page = 1, per_page = 30, all } = req.query;
+
+    // ?all=true: loop through every page and return full list + total count
+    if (all === 'true') {
+      let currentPage = 1;
+      let allTickets = [];
+      const PER_PAGE = 100; // Freshdesk max per_page
+
+      while (true) {
+        const batch = await freshdeskService.getTickets(
+          user.freshdeskApiKey,
+          user.freshdeskDomain,
+          currentPage,
+          PER_PAGE
+        );
+        allTickets = allTickets.concat(batch);
+
+        // Freshdesk returns fewer than per_page on the last page
+        if (batch.length < PER_PAGE) break;
+        currentPage++;
+      }
+
+      return res.json({ tickets: allTickets, total: allTickets.length });
+    }
+
+    // Default: single-page fetch
     const tickets = await freshdeskService.getTickets(
       user.freshdeskApiKey,
       user.freshdeskDomain,

@@ -4,18 +4,36 @@ const { protect } = require('../middleware/auth');
 const hubspotService = require('../services/hubspotService');
 
 // GET /api/hubspot/status — verify the private token is working
+// GET /api/hubspot/status
 router.get('/status', protect, async (req, res) => {
   try {
     const info = await hubspotService.getAccountInfo();
-    res.json({ connected: true, portalId: info.portalId, uiDomain: info.uiDomain });
+
+    return res.json({
+      connected: true,
+      portalId: info.portalId,
+      uiDomain: info.uiDomain,
+    });
+
   } catch (err) {
     if (err.message === 'HUBSPOT_PRIVATE_TOKEN is not set in .env') {
-      return res.status(400).json({ connected: false, message: 'Token not configured' });
+      return res.status(400).json({
+        connected: false,
+        message: 'Token not configured',
+      });
     }
+
     if (err.response?.status === 401) {
-      return res.status(401).json({ connected: false, message: 'Invalid HubSpot Private App Token' });
+      return res.status(401).json({
+        connected: false,
+        message: 'Invalid HubSpot token',
+      });
     }
-    res.status(500).json({ connected: false, message: err.response?.data?.message || err.message });
+
+    return res.status(500).json({
+      connected: false,
+      message: err.response?.data?.message || err.message,
+    });
   }
 });
 
